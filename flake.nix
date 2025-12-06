@@ -39,11 +39,9 @@
           overlays = [ (import rust-overlay) ];
         };
 
-      # Import the Nix visualization library
       visualizeLib = import ./nix { lib = nixpkgs.lib; };
     in
     {
-      # Export visualization functions
       lib = visualizeLib;
 
       packages = forAllSystems (
@@ -51,36 +49,22 @@
         let
           pkgs = pkgsFor system;
 
-          # Rust toolchain with WASM target
           rustToolchain = pkgs.rust-bin.nightly.latest.default.override {
             targets = [ "wasm32-unknown-unknown" ];
             extensions = [ "rust-src" ];
           };
 
-          # Crane library for building Rust
           craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
 
-          # Common args for crane builds
           commonArgs = {
             src = craneLib.cleanCargoSource ./rs;
             strictDeps = true;
-
             CARGO_BUILD_TARGET = "wasm32-unknown-unknown";
-
-            # Needed for wasm builds
             doCheck = false;
           };
 
-          # Build cargo dependencies separately for caching
-          cargoArtifacts = craneLib.buildDepsOnly (
-            commonArgs
-            // {
-              # Dummy src for deps-only build
-              pname = "imp-graph-deps";
-            }
-          );
+          cargoArtifacts = craneLib.buildDepsOnly (commonArgs // { pname = "imp-graph-deps"; });
 
-          # Build the WASM binary
           wasmBuild = craneLib.buildPackage (
             commonArgs
             // {
@@ -91,7 +75,7 @@
           );
         in
         {
-          # The WASM app with HTML/JS wrapper
+          # Self-contained HTML with inlined WASM - works with file:// URLs
           default = pkgs.stdenv.mkDerivation {
             pname = "imp-graph";
             version = "0.1.0";
@@ -104,28 +88,29 @@
             ];
 
             buildPhase = ''
-              # Generate JS bindings
               wasm-bindgen \
                 ${wasmBuild}/bin/imp-graph.wasm \
                 --out-dir pkg \
                 --target web \
                 --no-typescript
 
-              # Optimize WASM
               wasm-opt -Oz pkg/imp-graph_bg.wasm -o pkg/imp-graph_bg.wasm
-
-              # Compile SCSS
               sass public/styles.scss:styles.css --style=compressed --no-source-map
-
-              # Create output directory
-              mkdir -p dist
             '';
 
             installPhase = ''
-              mkdir -p $out
+                            mkdir -p $out
 
-              # Copy index.html with inline modifications for standalone use
-              cat > $out/index.html << 'EOF'
+                            WASM_BASE64=$(base64 -w0 pkg/imp-graph_bg.wasm)
+
+                            # Convert ES module to inline script
+                            sed -e 's/^export { initSync };$//' \
+                                -e 's/^export default __wbg_init;$//' \
+                                -e 's/^export class /class /' \
+                                -e "s/import\.meta\.url/'inline'/" \
+                                pkg/imp-graph.js > pkg/imp-graph-inline.js
+
+                            cat > $out/index.html << 'HTMLHEAD'
               <!DOCTYPE html>
               <html lang="en">
               <head>
@@ -133,43 +118,29 @@
                   <meta name="viewport" content="width=device-width, initial-scale=1.0">
                   <title>imp - Dependency Graph</title>
                   <style>
-              EOF
-              cat styles.css >> $out/index.html
-              cat >> $out/index.html << 'EOF'
+              HTMLHEAD
+                            cat styles.css >> $out/index.html
+                            cat >> $out/index.html << 'HTMLMID'
                   </style>
-                  <link data-trunk rel="rust" data-wasm-opt="z" />
               </head>
               <body>
-                  <script type="module">
-                      import init, * as bindings from './imp-graph.js';
-                      window.wasmBindings = bindings;
-                      // Initial graph data - will be replaced by Nix
-                      const graphData = {"nodes":[],"links":[]};
-                      init().then(() => {
-                          if (window.wasmBindings.hydrate) {
-                              window.wasmBindings.hydrate();
-                          }
-                          // Make graph data available globally
-                          window.graphData = graphData;
-                      });
+                  <script id="graph-data" type="application/json">{"nodes":[],"links":[]}</script>
+                  <script>
+                  (function() {
+              HTMLMID
+                            cat pkg/imp-graph-inline.js >> $out/index.html
+                            cat >> $out/index.html << HTMLTAIL
+                      var wasmBytes = Uint8Array.from(atob("$WASM_BASE64"), function(c) { return c.charCodeAt(0); });
+                      initSync(wasmBytes);
+                  })();
                   </script>
               </body>
               </html>
-              EOF
-
-              # Copy WASM and JS files
-              cp pkg/imp-graph_bg.wasm $out/
-              cp pkg/imp-graph.js $out/
-
-              # Copy favicon
-              cp public/favicon.ico $out/ 2>/dev/null || true
+              HTMLTAIL
             '';
           };
 
-          # Just the WASM binary (for reference)
           wasm = wasmBuild;
-
-          # Cargo artifacts (for caching)
           deps = cargoArtifacts;
         }
       );
@@ -216,23 +187,22 @@
           pkgs = pkgsFor system;
         in
         {
-          # Build check
           build = self.packages.${system}.default;
 
-          # Nix evaluation test
-          nix-eval = pkgs.runCommand "nix-eval-test" { } ''
-            ${pkgs.nix}/bin/nix eval --json --expr '
-              let
-                lib = import ${nixpkgs}/lib;
-                tests = import ${self}/tests { inherit lib; };
-              in
-              builtins.attrNames tests
-            ' > $out
-          '';
+          # Tests are evaluated at build time - if evaluation fails, the check fails
+          nix-eval =
+            let
+              lib = nixpkgs.lib;
+              tests = import ./tests { inherit lib; };
+              testNames = builtins.attrNames tests;
+            in
+            pkgs.runCommand "nix-eval-test" { } ''
+              echo "Tests evaluated successfully: ${builtins.concatStringsSep ", " testNames}"
+              touch $out
+            '';
         }
       );
 
-      # Export tests for nix-unit
       tests = import ./tests { lib = nixpkgs.lib; };
     };
 }

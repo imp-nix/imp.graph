@@ -115,8 +115,7 @@ let
         in
         {
           id = rep.id;
-          label =
-            if lib.length nodes > 1 then lib.concatStringsSep "\n" sortedNames else leafName rep.id;
+          label = if lib.length nodes > 1 then lib.concatStringsSep "\n" sortedNames else leafName rep.id;
           group = cluster;
           color = clusterColors.${cluster} or null;
         }
@@ -176,10 +175,7 @@ let
       indexHtml = builtins.readFile "${wasmDistPath}/index.html";
 
       # Replace the placeholder graph data
-      html = builtins.replaceStrings
-        [ ''{"nodes":[],"links":[]}'' ]
-        [ graphJson ]
-        indexHtml;
+      html = builtins.replaceStrings [ ''{"nodes":[],"links":[]}'' ] [ graphJson ] indexHtml;
     in
     html;
 
