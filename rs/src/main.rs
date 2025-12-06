@@ -3,7 +3,7 @@
 // Bin target reuses lib deps, silence noisy lint.
 #![allow(unused_crate_dependencies)]
 
-use imp_graph::{init_logging, App};
+use imp_graph::{App, init_logging};
 use leptos::prelude::*;
 
 fn main() {

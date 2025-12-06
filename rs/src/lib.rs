@@ -5,7 +5,7 @@
 
 use leptos::prelude::*;
 use leptos_meta::*;
-use log::{info, warn, Level};
+use log::{Level, info, warn};
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlScriptElement, Window};
 

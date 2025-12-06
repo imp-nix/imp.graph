@@ -10,6 +10,9 @@
     nix-unit.inputs.nixpkgs.follows = "nixpkgs";
     treefmt-nix.url = "github:numtide/treefmt-nix";
     treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
+    imp.url = "github:imp-nix/imp.lib";
+    imp.inputs.nixpkgs.follows = "nixpkgs";
+    imp.inputs.treefmt-nix.follows = "treefmt-nix";
   };
 
   outputs =
@@ -20,6 +23,7 @@
       crane,
       nix-unit,
       treefmt-nix,
+      imp,
       ...
     }:
     let
@@ -149,10 +153,9 @@
         system:
         let
           pkgs = pkgsFor system;
-          treefmtEval = treefmt-nix.lib.evalModule pkgs {
-            projectRootFile = "flake.nix";
-            programs.nixfmt.enable = true;
-            programs.rustfmt.enable = true;
+          formatterEval = imp.formatterLib.makeEval {
+            inherit pkgs treefmt-nix;
+            rust.enable = true;
           };
         in
         {
@@ -166,7 +169,7 @@
               pkgs.wasm-bindgen-cli_0_2_100
               pkgs.dart-sass
               pkgs.cargo-sort
-              treefmtEval.config.build.wrapper
+              formatterEval.config.build.wrapper
               nix-unit.packages.${system}.default
             ];
           };
@@ -175,10 +178,11 @@
 
       formatter = forAllSystems (
         system:
-        (treefmt-nix.lib.evalModule (pkgsFor system) {
-          projectRootFile = "flake.nix";
-          programs.nixfmt.enable = true;
-        }).config.build.wrapper
+        imp.formatterLib.make {
+          pkgs = pkgsFor system;
+          inherit treefmt-nix;
+          rust.enable = true;
+        }
       );
 
       checks = forAllSystems (
