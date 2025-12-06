@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>imp Registry Visualization</title>
+    <link data-trunk rel="scss" href="public/styles.scss" />
+    <link data-trunk rel="icon" href="public/favicon.ico" />
+    <link data-trunk rel="rust" data-wasm-opt="z" data-weak-refs />
+  </head>
+
+  <body>
+    <!-- Graph data is injected here by the Nix wrapper -->
+    <script id="graph-data" type="application/json">
+      { "nodes": [], "links": [] }
+    </script>
+  </body>
+</html>

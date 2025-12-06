@@ -1,0 +1,61 @@
+/* imp-graph styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #161b22;
+  color: #c9d1d9;
+  line-height: 1.5;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* Fullscreen graph layout */
+.fullscreen-graph {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: linear-gradient(135deg, #161b22 0%, #1f2937 100%);
+}
+
+.fullscreen-graph .force-graph-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.graph-overlay {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.graph-overlay h1 {
+  color: #fff;
+  margin: 0 0 0.25rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.graph-overlay .subtitle {
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  font-size: 0.8rem;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.force-graph-canvas {
+  border-radius: 0;
+  box-shadow: none;
+}
