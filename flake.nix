@@ -10,9 +10,9 @@
     nix-unit.inputs.nixpkgs.follows = "nixpkgs";
     treefmt-nix.url = "github:numtide/treefmt-nix";
     treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
-    imp.url = "github:imp-nix/imp.lib";
-    imp.inputs.nixpkgs.follows = "nixpkgs";
-    imp.inputs.treefmt-nix.follows = "treefmt-nix";
+    imp-fmt.url = "github:imp-nix/imp.fmt";
+    imp-fmt.inputs.nixpkgs.follows = "nixpkgs";
+    imp-fmt.inputs.treefmt-nix.follows = "treefmt-nix";
   };
 
   outputs =
@@ -23,7 +23,7 @@
       crane,
       nix-unit,
       treefmt-nix,
-      imp,
+      imp-fmt,
       ...
     }:
     let
@@ -153,7 +153,7 @@
         system:
         let
           pkgs = pkgsFor system;
-          formatterEval = imp.formatterLib.makeEval {
+          formatterEval = imp-fmt.lib.makeEval {
             inherit pkgs treefmt-nix;
             rust.enable = true;
           };
@@ -178,7 +178,7 @@
 
       formatter = forAllSystems (
         system:
-        imp.formatterLib.make {
+        imp-fmt.lib.make {
           pkgs = pkgsFor system;
           inherit treefmt-nix;
           rust.enable = true;
