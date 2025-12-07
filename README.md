@@ -12,6 +12,35 @@ imp.graph provides a WASM-based visualization component for exploring flake depe
 - Cluster-based coloring for different module types
 - Node merging for cleaner visualization
 
+## Installation
+
+Add to your flake inputs:
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    imp-graph.url = "github:imp-nix/imp.graph";
+    imp-graph.inputs.nixpkgs.follows = "nixpkgs";
+  };
+}
+```
+
+If you also use imp.lib, you can reduce lockfile duplication by following its bundled dependencies:
+
+```nix
+{
+  inputs = {
+    imp.url = "github:imp-nix/imp.lib";
+    imp-graph.url = "github:imp-nix/imp.graph";
+    imp-graph.inputs.nixpkgs.follows = "nixpkgs";
+    imp-graph.inputs.treefmt-nix.follows = "imp/treefmt-nix";
+    imp-graph.inputs.nix-unit.follows = "imp/nix-unit";
+    imp-graph.inputs.imp-fmt.follows = "imp/imp-fmt";
+  };
+}
+```
+
 ## Usage
 
 ### As a Nix Library
