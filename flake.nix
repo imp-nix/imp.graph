@@ -79,7 +79,6 @@
           );
         in
         {
-          # Self-contained HTML with inlined WASM - works with file:// URLs
           default = pkgs.stdenv.mkDerivation {
             pname = "imp-graph";
             version = "0.1.0";
@@ -107,7 +106,6 @@
 
                             WASM_BASE64=$(base64 -w0 pkg/imp-graph_bg.wasm)
 
-                            # Convert ES module to inline script
                             sed -e 's/^export { initSync };$//' \
                                 -e 's/^export default __wbg_init;$//' \
                                 -e 's/^export class /class /' \
@@ -193,7 +191,6 @@
         {
           build = self.packages.${system}.default;
 
-          # Tests are evaluated at build time - if evaluation fails, the check fails
           nix-eval =
             let
               lib = nixpkgs.lib;
